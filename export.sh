@@ -1,2 +1,4 @@
 #!/bin/sh
-runhaskell tables.hs >> TABLES
+rm -rf ./dist
+mkdir dist
+runhaskell tables.hs >> ./dist/TABLES
