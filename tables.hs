@@ -1,4 +1,4 @@
-module Tabellen where
+module Tables where
 
 import Data.List.Split
 
@@ -20,19 +20,25 @@ type Point = Float
 type Team = Char
 
 -- A single match
-data Game = Game (Team, Team) (Point, Point)
+data Game = Game { teamNames :: (Team, Team), gameResults :: (Point, Point) }
 
 instance Show Game where
-  show (Game teams points) = "Game(" ++ [fst teams] ++ ":" ++ [snd teams] ++ "->" ++ show (fst points) ++ ":" ++ show (snd points) ++ ")"
+  show (Game teams points) = [fst teams] ++ ":" ++ [snd teams] ++ " -> " ++ show (fst points) ++ ":" ++ show (snd points)
 
 -- All matches played at one day
 type Gameday = [Game]
 
 -- Final results paired with a team name
-type TeamResult = (Team, Point)
+data TeamResult = TeamResult { teamName :: Team, points :: Point }
+
+instance Show TeamResult where
+  show (TeamResult team points) = [team] ++ " -> " ++ show points
 
 -- All results combined
-type Table = ([TeamResult] ,[Gameday])
+data Table = Table [TeamResult] [Gameday]
+
+instance Show Table where
+  show (Table res days) = "TABELLE: \n    ERGEBNISSE\n" ++ ((unlines . map (\r -> "        " ++ show r)) $ res) ++ "\n" ++ ((unlines . map (\day -> "    SPIELTAG\n" ++ (((unlines . map (\game -> "        " ++ show game))) $ day) )) $ days)
 
 -- Points for a win
 win :: Point
@@ -93,13 +99,39 @@ level5 = concat (map (combine (allCombos !! 5)) level4)
 possibleStreaks :: [[Game]]
 possibleStreaks = level5
 
-pssibleGamedayStreaks :: [[Gameday]]
+possibleGamedayStreaks :: [[Gameday]]
 possibleGamedayStreaks = map (chunksOf gamesPerDay) possibleStreaks
 
+teamParticipatedInGame :: Team -> Game -> Bool
+teamParticipatedInGame t g = ((t == fst tn) || (t == snd tn)) where tn = (teamNames g)
+
+pointsForTeam :: Team -> Game -> Point
+pointsForTeam t g =
+                let tn = (teamNames g)
+                    res = (gameResults g)
+                in if t == fst tn then fst res
+                else if t == snd tn then snd res
+                else 0
+
+filterGamesWithTeam :: Team -> [Game] -> [Game]
+filterGamesWithTeam t games = filter (teamParticipatedInGame t) games
+
+sumPointsForTeam :: Team -> [Game] -> Point
+sumPointsForTeam t g = (sum (map (pointsForTeam t) (filterGamesWithTeam t g)))
+
+gamedaysToTeamResult :: [Gameday] -> [TeamResult]
+gamedaysToTeamResult gamedays = map (\team -> TeamResult team (sumPointsForTeam team (concat gamedays))) teams
+
 tables :: [Table]
+tables = map (\x -> (Table (gamedaysToTeamResult x) x)) possibleGamedayStreaks
 
+printTables :: IO ()
+printTables = do
+        putStrLn $ (unlines . map show) $ tables
 
-
+main :: IO ()
+main = do
+    printTables
 ----------------------------------------------------------------------------
 -- type TableEntry = (Point, [Point])
 -- type Table = [TableEntry]
