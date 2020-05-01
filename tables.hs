@@ -1,5 +1,6 @@
 module Tables where
 
+import Data.Sort
 import Data.List.Split
 
 -- The mathematical factorial function
@@ -33,6 +34,12 @@ data TeamResult = TeamResult { teamName :: Team, points :: Point }
 
 instance Show TeamResult where
   show (TeamResult team points) = [team] ++ " -> " ++ show points
+
+instance Eq TeamResult where
+  (TeamResult _ p1) == (TeamResult _ p2) = p1 == p2
+
+instance Ord TeamResult where
+  (TeamResult _ p1) `compare` (TeamResult _ p2) = p1 `compare` p2
 
 -- All results combined
 data Table = Table [TeamResult] [Gameday]
@@ -120,7 +127,7 @@ sumPointsForTeam :: Team -> [Game] -> Point
 sumPointsForTeam t g = (sum (map (pointsForTeam t) (filterGamesWithTeam t g)))
 
 gamedaysToTeamResult :: [Gameday] -> [TeamResult]
-gamedaysToTeamResult gamedays = map (\team -> TeamResult team (sumPointsForTeam team (concat gamedays))) teams
+gamedaysToTeamResult gamedays = reverse (sort (map (\team -> TeamResult team (sumPointsForTeam team (concat gamedays))) teams))
 
 tables :: [Table]
 tables = map (\x -> (Table (gamedaysToTeamResult x) x)) possibleGamedayStreaks
@@ -132,6 +139,7 @@ printTables = do
 main :: IO ()
 main = do
     printTables
+
 ----------------------------------------------------------------------------
 -- type TableEntry = (Point, [Point])
 -- type Table = [TableEntry]
