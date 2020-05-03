@@ -23,6 +23,14 @@ binomialCoefficient n k | k > n = 0
                         | n < 0 = 0
                         | n > k = (factorial n) `div` ((factorial k) * (factorial (n - k))) 
 
+-- Returns all elements except last from list
+takeAllExceptLast :: [a] -> [a]
+takeAllExceptLast xs = take ((length xs) - 1) xs
+
+-- Returns last element from list
+takeLast :: [a] -> a
+takeLast xs = (take 1 (reverse xs)) !! 0
+
 -- A point
 type Point = Float
 
@@ -33,7 +41,7 @@ type Team = Char
 data Game = Game { teamNames :: (Team, Team), gameResults :: (Point, Point) }
 
 instance Show Game where
-  show (Game teams points) = [fst teams] ++ ":" ++ [snd teams] ++ " -> " ++ show (fst points) ++ ":" ++ show (snd points)
+  show (Game teams points) = show (fst points) ++ ":" ++ show (snd points)
 
 -- All matches played at one day
 type Gameday = [Game]
@@ -42,7 +50,7 @@ type Gameday = [Game]
 data TeamResult = TeamResult { teamName :: Team, points :: Point }
 
 instance Show TeamResult where
-  show (TeamResult team points) = [team] ++ " -> " ++ show points
+  show (TeamResult team points) = [team] ++ ":" ++ show points
 
 instance Eq TeamResult where
   (TeamResult _ p1) == (TeamResult _ p2) = p1 == p2
@@ -51,10 +59,12 @@ instance Ord TeamResult where
   (TeamResult _ p1) `compare` (TeamResult _ p2) = p1 `compare` p2
 
 -- All results combined
-data Table = Table [TeamResult] [Gameday]
+data Table = Table { endResults :: [TeamResult], gamedays :: [Gameday] }
 
 instance Show Table where
-  show (Table res days) = "TABELLE: \n    ERGEBNISSE\n" ++ ((unlines . map (\r -> "        " ++ show r)) $ res) ++ "\n" ++ ((unlines . map (\day -> "    SPIELTAG\n" ++ (((unlines . map (\game -> "        " ++ show game))) $ day) )) $ days)
+  show (Table res days) = takeAllExceptLast ((concat (map showRes res)) ++ (concat (map formatGameday days)))
+                          where showRes r = show r ++ ","
+                                formatGameday day = concat (map (\g -> show g ++ " - ") (takeAllExceptLast day)) ++ show (takeLast day) ++ ","
 
 -- Points for a win
 win :: Point
@@ -135,10 +145,25 @@ gamedaysToTeamResult gamedays = reverse (sort (map (\team -> TeamResult team (su
 tables :: [Table]
 tables = map (\x -> (Table (gamedaysToTeamResult x) x)) possibleGamedayStreaks
 
+printCSVHeaders :: IO ()
+printCSVHeaders = do
+                putStr $ (concat . map toTeamNumberHeader) teamNumbers -- Prints a number for each team
+                putStr $ takeAllExceptLast (concat (formatGamedayHeaders exampleGamedays))
+                putStr "\n"
+                where teamNumbers = map fst (zip [1..] teams)
+                      toTeamNumberHeader i = show i ++ ","
+
+                      exampleGamedays = gamedays (tables !! 0)
+                      formatGamedayHeaders days = map (\(i,d) -> formatGameday i d) (zip [1..]days)
+                      formatGameday i day = "Spieltag " ++ show i ++ " (" ++ concat (map (\g -> formatGame g ++ " - ") (takeAllExceptLast day)) ++ formatGame (takeLast day) ++ "),"
+                      formatGame g = [fst tn] ++ ":" ++ [snd tn] where tn = (teamNames g)
+
+
 printTables :: IO ()
 printTables = do
         putStrLn $ (unlines . map show) $ tables
 
 main :: IO ()
 main = do
+    printCSVHeaders
     printTables
