@@ -1,0 +1,4 @@
+The code in tables.hs generates all possible soccer tables for n teams.
+It can be used to prove or discover specific things like "How many points do 
+you need in order not to dismount", "How many points has a table with n teams",
+"How many games have to be played when there n teams"
