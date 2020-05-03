@@ -96,7 +96,7 @@ amountOfGamedays = ceiling ((fromIntegral games) / (fromIntegral gamesPerDay))
 
 -- All combinations of teams
 combinationsOfTeams :: [(Team, Team)]
-combinationsOfTeams = map (\(x:y:xs) -> (x,y)) [x| x <- mapM (const teams) [1..2], head x < head (tail x) ]
+combinationsOfTeams = [ (x !! 0, x !! 1) | x <- mapM (const teams) [1..2], head x < head (tail x) ]
 
 -- All possible Results for a game
 possibleResults :: [(Point, Point)]
