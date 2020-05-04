@@ -1,6 +1,7 @@
 module Tables where
 
 import Data.Sort
+import Data.List(tails)
 import Data.List.Split
 
 -- The mathematical factorial function
@@ -96,7 +97,7 @@ amountOfGamedays = ceiling ((fromIntegral games) / (fromIntegral gamesPerDay))
 
 -- All combinations of teams
 combinationsOfTeams :: [(Team, Team)]
-combinationsOfTeams = [ (x !! 0, x !! 1) | x <- mapM (const teams) [1..2], head x < head (tail x) ]
+combinationsOfTeams = [ (x0, x1) | (x0:xs) <- tails teams, x1 <- xs ]
 
 -- All possible Results for a game
 possibleResults :: [(Point, Point)]
